@@ -40,17 +40,18 @@ export async function updateSession(request: NextRequest) {
     (p) => path === p || path.startsWith(p + "/")
   );
 
-  if (!user && !isPublic) {
+  // A redirect that carries over any refreshed/rotated session cookies that
+  // setAll() wrote onto `response` (otherwise a refresh-on-redirect is lost).
+  const redirectTo = (pathname: string) => {
     const url = request.nextUrl.clone();
-    url.pathname = "/login";
-    return NextResponse.redirect(url);
-  }
+    url.pathname = pathname;
+    const r = NextResponse.redirect(url);
+    response.cookies.getAll().forEach((c) => r.cookies.set(c));
+    return r;
+  };
 
-  if (user && isPublic) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/";
-    return NextResponse.redirect(url);
-  }
+  if (!user && !isPublic) return redirectTo("/login");
+  if (user && isPublic) return redirectTo("/");
 
   // Optimistic admin gate; the admin layout re-checks authoritatively on the server.
   if (user && path.startsWith("/admin")) {
@@ -59,11 +60,7 @@ export async function updateSession(request: NextRequest) {
       .select("is_admin")
       .eq("id", user.id)
       .single();
-    if (!profile?.is_admin) {
-      const url = request.nextUrl.clone();
-      url.pathname = "/";
-      return NextResponse.redirect(url);
-    }
+    if (!profile?.is_admin) return redirectTo("/");
   }
 
   return response;
