@@ -44,6 +44,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "categories_currency_fk"
+            columns: ["currency"]
+            isOneToOne: false
+            referencedRelation: "currencies"
+            referencedColumns: ["code"]
+          },
+          {
             foreignKeyName: "categories_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
@@ -233,13 +240,29 @@ export type Database = {
           is_admin?: boolean
           peak_total?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_base_currency_fk"
+            columns: ["base_currency"]
+            isOneToOne: false
+            referencedRelation: "currencies"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "profiles_display_currency_fk"
+            columns: ["display_currency"]
+            isOneToOne: false
+            referencedRelation: "currencies"
+            referencedColumns: ["code"]
+          },
+        ]
       }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      admin_stats: { Args: never; Returns: Json }
       app_pivot_currency: { Args: never; Returns: string }
       convert_amount: {
         Args: { p_amount: number; p_from: string; p_to: string }
