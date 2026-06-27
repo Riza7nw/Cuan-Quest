@@ -1,8 +1,9 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { onboardingSchema } from "@/lib/validation/profile";
+import { onboardingSchema, settingsSchema } from "@/lib/validation/profile";
 
 export type OnboardingState = { error?: string };
 
@@ -24,7 +25,6 @@ export async function completeOnboarding(
 
   const { base_currency, first_pocket_name } = parsed.data;
 
-  // The chosen currency must be a known, active code (defense beyond the FK).
   const { data: cur } = await supabase
     .from("currencies")
     .select("code")
@@ -33,8 +33,8 @@ export async function completeOnboarding(
     .maybeSingle();
   if (!cur) return { error: "Mata uang tidak didukung." };
 
-  // Idempotent: once the user has pockets, onboarding is a no-op. This prevents
-  // duplicate first pockets and base-currency churn after the account is funded.
+  // Idempotent: once the user has pockets, onboarding is a no-op (no duplicate
+  // first pocket, no base-currency churn after the account is funded).
   const { count } = await supabase
     .from("categories")
     .select("id", { count: "exact", head: true })
@@ -56,4 +56,38 @@ export async function completeOnboarding(
   }
 
   redirect("/");
+}
+
+export type SettingsState = { error?: string; ok?: boolean };
+
+export async function updateDisplayCurrency(input: {
+  display_currency: string;
+}): Promise<SettingsState> {
+  const parsed = settingsSchema.safeParse(input);
+  if (!parsed.success) return { error: "Input tidak valid." };
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Sesi habis." };
+
+  const { data: cur } = await supabase
+    .from("currencies")
+    .select("code")
+    .eq("code", parsed.data.display_currency)
+    .eq("is_active", true)
+    .maybeSingle();
+  if (!cur) return { error: "Mata uang tidak didukung." };
+
+  const { error } = await supabase
+    .from("profiles")
+    .update({ display_currency: parsed.data.display_currency })
+    .eq("id", user.id);
+  if (error) return { error: error.message };
+
+  revalidatePath("/");
+  revalidatePath("/settings");
+  revalidatePath("/insights");
+  return { ok: true };
 }
