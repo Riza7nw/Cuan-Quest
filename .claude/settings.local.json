@@ -1,9 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "PowerShell(npx --yes shadcn@latest add input label card dialog tabs select badge sonner dropdown-menu table skeleton progress alert-dialog switch separator -y --overwrite)",
-      "PowerShell(npm *)",
-      "PowerShell(git *)"
-    ]
-  }
-}
