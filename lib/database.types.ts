@@ -271,9 +271,19 @@ export type Database = {
         Args: { p_amount: number; p_from: string; p_to: string }
         Returns: number
       }
+      delete_entry: { Args: { p_entry: string }; Returns: undefined }
       get_rate: { Args: { p_code: string }; Returns: number }
       is_admin: { Args: never; Returns: boolean }
       recompute_user_level: { Args: { p_user: string }; Returns: undefined }
+      update_entry: {
+        Args: {
+          p_entry: string
+          p_amount?: number
+          p_note?: string
+          p_occurred_at?: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

@@ -1,6 +1,8 @@
 import { createClient, getUser } from "@/lib/supabase/server";
 import { HistoryFilters } from "@/components/history-filters";
+import { EntryActions } from "@/components/entry-actions";
 import { formatMoney } from "@/lib/currency";
+import type { EntryType } from "@/lib/types";
 import { formatDistanceToNow } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
 
@@ -92,10 +94,20 @@ export default async function HistoryPage({
                     })}
                   </p>
                 </div>
-                <span className="shrink-0 tabular-nums">
-                  {SIGN[e.type] ?? ""}
-                  {formatMoney(Number(e.amount), cat?.currency ?? "IDR")}
-                </span>
+                <div className="flex shrink-0 items-center gap-1">
+                  <span className="tabular-nums">
+                    {SIGN[e.type] ?? ""}
+                    {formatMoney(Number(e.amount), cat?.currency ?? "IDR")}
+                  </span>
+                  <EntryActions
+                    id={e.id}
+                    type={e.type as EntryType}
+                    amount={Number(e.amount)}
+                    note={e.note}
+                    occurredAt={e.occurred_at}
+                    currency={cat?.currency ?? "IDR"}
+                  />
+                </div>
               </li>
             );
           })}
