@@ -1,6 +1,6 @@
 import { createClient, getUser } from "@/lib/supabase/server";
 import { getRatesMap } from "@/lib/rates";
-import { crossConvert, formatMoney } from "@/lib/currency";
+import { crossConvert, formatMoney, formatAsOf } from "@/lib/currency";
 import { buildTotalSeries } from "@/lib/insights";
 import { TotalOverTime } from "@/components/charts/total-over-time";
 import { Composition } from "@/components/charts/composition";
@@ -11,7 +11,7 @@ export default async function InsightsPage() {
 
   const supabase = await createClient();
 
-  const [profileRes, categoriesRes, entriesRes, rates] = await Promise.all([
+  const [profileRes, categoriesRes, entriesRes, ratesResult] = await Promise.all([
     supabase.from("profiles").select("display_currency").eq("id", user.id).single(),
     supabase
       .from("categories")
@@ -28,6 +28,8 @@ export default async function InsightsPage() {
   const display = profileRes.data?.display_currency ?? "IDR";
   const categories = categoriesRes.data ?? [];
   const entries = entriesRes.data ?? [];
+  const { rates, asOf, ok: ratesOk } = ratesResult;
+  const ratesAsOf = formatAsOf(asOf);
   const catCurrency = new Map(categories.map((c) => [c.id, c.currency]));
 
   const series = buildTotalSeries(
@@ -57,7 +59,12 @@ export default async function InsightsPage() {
         <h3 className="text-sm font-semibold">Total tabungan ({display})</h3>
         <TotalOverTime data={series} currency={display} />
         <p className="text-xs text-muted-foreground">
-          Nilai historis dihitung memakai kurs terkini.
+          Nilai historis dihitung memakai kurs terkini
+          {ratesOk
+            ? ratesAsOf
+              ? ` (kurs per ${ratesAsOf} WIB).`
+              : "."
+            : ". Kurs sedang tidak tersedia — angka konversi mungkin tidak akurat."}
         </p>
       </section>
 

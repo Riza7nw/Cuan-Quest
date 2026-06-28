@@ -9,3 +9,13 @@ export const levelSchema = z.object({
   badge_icon: z.string().max(40).nullable().optional(),
 });
 export type LevelInput = z.infer<typeof levelSchema>;
+
+// A level number to delete. RLS still gates the write to admins; this guards the
+// shape so a malformed value (NaN, float, string) can't reach the DELETE.
+export const deleteLevelSchema = z.coerce.number().int().positive();
+
+// Currency activate/deactivate. ISO-4217 shape (3 uppercase letters).
+export const currencyActiveSchema = z.object({
+  code: z.string().regex(/^[A-Z]{3}$/),
+  active: z.boolean(),
+});

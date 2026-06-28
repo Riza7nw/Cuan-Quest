@@ -69,6 +69,8 @@ export async function createEntry(
 
   revalidatePath("/");
   revalidatePath("/history");
+  revalidatePath("/insights"); // charts read the entries table
+  revalidatePath("/categories"); // pocket balances change
 
   return { ok: true, leveledUp, newLevel: afterLevel, newTitle };
 }

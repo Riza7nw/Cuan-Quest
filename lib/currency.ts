@@ -30,3 +30,14 @@ export function formatMoney(amount: number, currency: string): string {
     return `${currency} ${amount.toLocaleString("id-ID")}`;
   }
 }
+
+// Human "kurs per ..." label for an exchange-rate snapshot timestamp. Pin the
+// zone to Asia/Jakarta so server-rendered output is stable and unambiguous (WIB).
+export function formatAsOf(iso: string | null | undefined): string | null {
+  if (!iso) return null;
+  return new Date(iso).toLocaleString("id-ID", {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: "Asia/Jakarta",
+  });
+}

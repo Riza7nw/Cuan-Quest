@@ -3,7 +3,11 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { refreshExchangeRates } from "@/lib/rates/provider";
-import { levelSchema } from "@/lib/validation/admin";
+import {
+  levelSchema,
+  deleteLevelSchema,
+  currencyActiveSchema,
+} from "@/lib/validation/admin";
 
 export type AdminResult = { ok: true } | { ok: false; error: string };
 
@@ -83,12 +87,15 @@ export async function upsertLevel(input: unknown): Promise<AdminResult> {
 }
 
 export async function deleteLevel(level: number): Promise<AdminResult> {
-  if (level === 1) return { ok: false, error: "Level 1 tidak dapat dihapus." };
+  const parsed = deleteLevelSchema.safeParse(level);
+  if (!parsed.success) return { ok: false, error: "Level tidak valid." };
+  const lvl = parsed.data;
+  if (lvl === 1) return { ok: false, error: "Level 1 tidak dapat dihapus." };
 
   const { supabase, error: ctxError } = await adminCtx();
   if (ctxError) return { ok: false, error: ctxError };
 
-  const { error } = await supabase.from("levels").delete().eq("level", level);
+  const { error } = await supabase.from("levels").delete().eq("level", lvl);
   if (error) return { ok: false, error: error.message };
 
   // The DB trigger (0009) recomputes every user against the reshaped ladder, so
@@ -103,13 +110,16 @@ export async function setCurrencyActive(
   code: string,
   active: boolean
 ): Promise<AdminResult> {
+  const parsed = currencyActiveSchema.safeParse({ code, active });
+  if (!parsed.success) return { ok: false, error: "Input tidak valid." };
+
   const { supabase, error: ctxError } = await adminCtx();
   if (ctxError) return { ok: false, error: ctxError };
 
   const { error } = await supabase
     .from("currencies")
-    .update({ is_active: active })
-    .eq("code", code);
+    .update({ is_active: parsed.data.active })
+    .eq("code", parsed.data.code);
   if (error) return { ok: false, error: error.message };
 
   // Pickers (onboarding/settings/new pocket) only list active currencies.

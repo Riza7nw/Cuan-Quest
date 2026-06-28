@@ -1,6 +1,6 @@
 import { createClient, getUser } from "@/lib/supabase/server";
 import { getRatesMap } from "@/lib/rates";
-import { crossConvert } from "@/lib/currency";
+import { crossConvert, formatAsOf } from "@/lib/currency";
 import { LevelCard } from "@/components/level-card";
 import { CategoryBalances } from "@/components/category-balances";
 import { RecentEntries } from "@/components/recent-entries";
@@ -11,7 +11,7 @@ export default async function DashboardPage() {
 
   const supabase = await createClient();
 
-  const [profileRes, levelsRes, categoriesRes, entriesRes, rates] =
+  const [profileRes, levelsRes, categoriesRes, entriesRes, ratesResult] =
     await Promise.all([
       supabase.from("profiles").select("*").eq("id", user.id).single(),
       supabase.from("levels").select("*").order("level"),
@@ -33,6 +33,7 @@ export default async function DashboardPage() {
   const levels = levelsRes.data ?? [];
   const categories = categoriesRes.data ?? [];
   const entries = entriesRes.data ?? [];
+  const { rates, asOf, ok: ratesOk } = ratesResult;
   if (!profile) return null;
 
   const display = profile.display_currency;
@@ -41,6 +42,10 @@ export default async function DashboardPage() {
       sum + crossConvert(Number(c.current_balance), c.currency, display, rates),
     0
   );
+  // The total only depends on rates when a pocket's currency differs from the
+  // display currency. Only then is a stale/unavailable rate worth flagging.
+  const needsConversion = categories.some((c) => c.currency !== display);
+  const ratesAsOf = formatAsOf(asOf);
   const title =
     levels.find((l) => l.level === profile.current_level)?.title ?? "Pemula";
 
@@ -69,6 +74,18 @@ export default async function DashboardPage() {
         baseCurrency={profile.base_currency}
         levels={levels}
       />
+      {needsConversion &&
+        (ratesOk ? (
+          ratesAsOf && (
+            <p className="text-center text-xs text-muted-foreground">
+              Kurs per {ratesAsOf} WIB
+            </p>
+          )
+        ) : (
+          <p className="rounded-lg border border-dashed px-3 py-2 text-center text-xs text-muted-foreground">
+            Kurs tidak tersedia — total lintas mata uang mungkin tidak akurat.
+          </p>
+        ))}
       <CategoryBalances categories={categories} />
       <RecentEntries rows={recent} />
     </div>

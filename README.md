@@ -71,7 +71,8 @@ cp .env.example .env.local
 
 ### 3. Database
 
-Apply the migrations in `supabase/migrations/` **in order** (`0001` → `0008`).
+Apply **every** file in `supabase/migrations/` **in numeric order** (`0001` →
+`0010` — and any added later; never skip one).
 They create the schema, RLS policies, the leveling engine (functions + triggers),
 seed data (levels, currencies, an initial rate snapshot), security hardening, and
 the `admin_stats()` function.
