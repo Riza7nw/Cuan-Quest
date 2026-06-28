@@ -18,6 +18,9 @@ export const metadata: Metadata = {
   title: "CuanQuest — Naik Level dengan Menabung",
   description:
     "Lacak akumulasi tabunganmu dan naik level ala RPG. Mulai dari nol.",
+  manifest: "/manifest.webmanifest",
+  icons: { icon: "/icon.svg" },
+  appleWebApp: { capable: true, title: "CuanQuest", statusBarStyle: "default" },
 };
 
 export const viewport: Viewport = {

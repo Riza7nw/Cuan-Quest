@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Menu, Plus } from "lucide-react";
+import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -12,6 +12,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { signOut } from "@/lib/actions/auth";
 
+// Slim top bar: wordmark + an overflow menu for secondary destinations. The
+// primary destinations live in the thumb-reachable BottomNav.
 export function AppNav({ isAdmin }: { isAdmin: boolean }) {
   return (
     <header className="sticky top-0 z-40 border-b bg-background/80 backdrop-blur">
@@ -19,47 +21,32 @@ export function AppNav({ isAdmin }: { isAdmin: boolean }) {
         <Link href="/" className="text-lg font-bold tracking-tight">
           CuanQuest
         </Link>
-        <div className="flex items-center gap-2">
-          <Button size="sm" render={<Link href="/add" />}>
-            <Plus className="size-4" /> Tambah
-          </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              render={<Button variant="outline" size="icon" aria-label="Menu" />}
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={<Button variant="outline" size="icon" aria-label="Menu" />}
+          >
+            <Menu className="size-4" />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-44">
+            <DropdownMenuItem render={<Link href="/settings" />}>
+              Setelan
+            </DropdownMenuItem>
+            {isAdmin && (
+              <DropdownMenuItem render={<Link href="/admin" />}>
+                Admin
+              </DropdownMenuItem>
+            )}
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              variant="destructive"
+              onClick={() => {
+                void signOut();
+              }}
             >
-              <Menu className="size-4" />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-44">
-              <DropdownMenuItem render={<Link href="/" />}>Dashboard</DropdownMenuItem>
-              <DropdownMenuItem render={<Link href="/categories" />}>
-                Kantong
-              </DropdownMenuItem>
-              <DropdownMenuItem render={<Link href="/history" />}>
-                Riwayat
-              </DropdownMenuItem>
-              <DropdownMenuItem render={<Link href="/insights" />}>
-                Insight
-              </DropdownMenuItem>
-              <DropdownMenuItem render={<Link href="/settings" />}>
-                Setelan
-              </DropdownMenuItem>
-              {isAdmin && (
-                <DropdownMenuItem render={<Link href="/admin" />}>
-                  Admin
-                </DropdownMenuItem>
-              )}
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                variant="destructive"
-                onClick={() => {
-                  void signOut();
-                }}
-              >
-                Keluar
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+              Keluar
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </header>
   );

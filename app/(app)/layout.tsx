@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient, getUser } from "@/lib/supabase/server";
 import { AppNav } from "@/components/app-nav";
+import { BottomNav } from "@/components/bottom-nav";
 
 export default async function AppLayout({
   children,
@@ -20,7 +21,10 @@ export default async function AppLayout({
   return (
     <div className="flex min-h-screen flex-col">
       <AppNav isAdmin={!!profile?.is_admin} />
-      <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-6">{children}</main>
+      <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-6 pb-28">
+        {children}
+      </main>
+      <BottomNav />
     </div>
   );
 }

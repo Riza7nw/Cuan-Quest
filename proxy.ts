@@ -8,7 +8,10 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Run on everything except static assets and the cron route (own auth).
-    "/((?!_next/static|_next/image|favicon.ico|api/cron|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
+    // Run on everything except static assets, PWA metadata (manifest + icons,
+    // which the browser fetches without an auth context), and the cron route
+    // (own auth). Without excluding these the manifest 307s to /login and the
+    // app can't be installed.
+    "/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|apple-icon|icon|api/cron|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|webmanifest)$).*)",
   ],
 };
