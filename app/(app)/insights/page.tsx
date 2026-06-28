@@ -158,8 +158,8 @@ export default async function InsightsPage() {
           <>
             <Composition data={composition} currency={display} />
             <ul className="divide-y rounded-xl border text-sm">
-              {composition.map((s, i) => (
-                <li key={i} className="flex justify-between px-4 py-2">
+              {composition.map((s) => (
+                <li key={s.name} className="flex justify-between px-4 py-2">
                   <span>{s.name}</span>
                   <span className="tabular-nums">
                     {formatMoney(s.value, display)}

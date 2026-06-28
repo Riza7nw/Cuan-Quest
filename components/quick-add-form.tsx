@@ -117,6 +117,12 @@ export function QuickAddForm({ pockets }: { pockets: Pocket[] }) {
           autoFocus
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              submit();
+            }
+          }}
           placeholder="0"
           className="mt-1 h-16 text-center text-3xl font-bold"
         />
@@ -217,8 +223,9 @@ function PocketChips({
             key={p.id}
             type="button"
             onClick={() => onChange(p.id)}
+            aria-pressed={value === p.id}
             className={cn(
-              "rounded-full border px-3 py-1.5 text-sm transition",
+              "rounded-full border px-3 py-1.5 text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
               value === p.id
                 ? "border-primary bg-primary text-primary-foreground"
                 : "bg-background hover:bg-accent"

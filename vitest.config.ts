@@ -13,6 +13,11 @@ export default defineConfig({
     setupFiles: ["./vitest.setup.ts"],
   },
   resolve: {
-    alias: { "@": root },
+    alias: {
+      "@": root,
+      // No client/server boundary in tests — stub the guard so server-only
+      // modules (e.g. lib/rates/provider.ts) are importable.
+      "server-only": path.join(root, "test/server-only-stub.ts"),
+    },
   },
 });

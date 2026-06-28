@@ -36,8 +36,8 @@ export function Composition({
             outerRadius={80}
             paddingAngle={2}
           >
-            {data.map((_, i) => (
-              <Cell key={i} fill={COLORS[i % COLORS.length]} />
+            {data.map((s, i) => (
+              <Cell key={s.name} fill={COLORS[i % COLORS.length]} />
             ))}
           </Pie>
           <Tooltip formatter={(value) => formatMoney(Number(value), currency)} />

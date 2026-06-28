@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { refreshExchangeRates } from "@/lib/rates/provider";
+import { isCronAuthorized } from "@/lib/cron-auth";
 
 // Daily exchange-rate refresh. Triggered by Vercel Cron (see vercel.json), which
 // sends `Authorization: Bearer <CRON_SECRET>`. The proxy matcher skips this path,
@@ -11,12 +12,11 @@ export const dynamic = "force-dynamic";
 export async function GET(request: Request) {
   const secret = process.env.CRON_SECRET;
   if (!secret) {
-    return NextResponse.json(
-      { ok: false, error: "CRON_SECRET not configured" },
-      { status: 500 }
-    );
+    // Log the misconfiguration server-side but return the same opaque 401 as a
+    // bad token, so a prober can't tell whether the endpoint is protected.
+    console.error("CRON_SECRET not configured");
   }
-  if (request.headers.get("authorization") !== `Bearer ${secret}`) {
+  if (!isCronAuthorized(request.headers.get("authorization"), secret)) {
     return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
   }
 
