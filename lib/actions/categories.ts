@@ -21,6 +21,7 @@ export async function createCategory(input: {
   name: string;
   currency: string;
   icon?: string | null;
+  target_amount?: number | null;
 }): Promise<ActionResult> {
   const parsed = categoryCreateSchema.safeParse(input);
   if (!parsed.success)
@@ -42,6 +43,7 @@ export async function createCategory(input: {
     name: parsed.data.name,
     currency: parsed.data.currency,
     icon: parsed.data.icon ?? null,
+    target_amount: parsed.data.target_amount ?? null,
   });
   if (error) return { ok: false, error: error.message };
 
@@ -55,6 +57,7 @@ export async function renameCategory(input: {
   id: string;
   name: string;
   icon?: string | null;
+  target_amount?: number | null;
 }): Promise<ActionResult> {
   const parsed = categoryUpdateSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: "Input tidak valid." };
@@ -64,7 +67,11 @@ export async function renameCategory(input: {
 
   const { error } = await supabase
     .from("categories")
-    .update({ name: parsed.data.name, icon: parsed.data.icon ?? null })
+    .update({
+      name: parsed.data.name,
+      icon: parsed.data.icon ?? null,
+      target_amount: parsed.data.target_amount ?? null,
+    })
     .eq("id", parsed.data.id)
     .eq("user_id", user.id);
   if (error) return { ok: false, error: error.message };

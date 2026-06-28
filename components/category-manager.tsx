@@ -23,12 +23,19 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { formatMoney } from "@/lib/currency";
+import { TargetProgress } from "@/components/target-progress";
 import {
   createCategory,
   renameCategory,
   deleteCategory,
 } from "@/lib/actions/categories";
 import type { Category } from "@/lib/types";
+
+// Parse a free-typed target into a positive number, or null when blank/zero.
+function parseTarget(s: string): number | null {
+  const n = Number(s.replace(/[^0-9.]/g, ""));
+  return n > 0 ? n : null;
+}
 
 type CurrencyOption = { code: string; name: string };
 
@@ -46,10 +53,12 @@ export function CategoryManager({
   const [name, setName] = useState("");
   const [currency, setCurrency] = useState(fallback);
   const [icon, setIcon] = useState("");
+  const [target, setTarget] = useState("");
 
   const [editing, setEditing] = useState<Category | null>(null);
   const [editName, setEditName] = useState("");
   const [editIcon, setEditIcon] = useState("");
+  const [editTarget, setEditTarget] = useState("");
   const [deleting, setDeleting] = useState<Category | null>(null);
 
   function onCreate() {
@@ -62,6 +71,7 @@ export function CategoryManager({
         name: name.trim(),
         currency,
         icon: icon.trim() || null,
+        target_amount: parseTarget(target),
       });
       if (!res.ok) {
         toast.error(res.error);
@@ -69,6 +79,7 @@ export function CategoryManager({
       }
       setName("");
       setIcon("");
+      setTarget("");
       toast.success("Kantong dibuat.");
       router.refresh();
     });
@@ -85,6 +96,7 @@ export function CategoryManager({
         id: editing.id,
         name: editName.trim(),
         icon: editIcon.trim() || null,
+        target_amount: parseTarget(editTarget),
       });
       if (!res.ok) {
         toast.error(res.error);
@@ -157,6 +169,19 @@ export function CategoryManager({
               Mata uang tidak bisa diubah setelah kantong terisi.
             </p>
           </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="cat-target">Target (opsional)</Label>
+            <Input
+              id="cat-target"
+              inputMode="decimal"
+              value={target}
+              onChange={(e) => setTarget(e.target.value)}
+              placeholder={`mis. 5000000 (${currency})`}
+            />
+            <p className="text-xs text-muted-foreground">
+              Tujuan tabungan kantong ini. Tidak memengaruhi level.
+            </p>
+          </div>
           <Button onClick={onCreate} disabled={pending} className="w-full">
             Buat kantong
           </Button>
@@ -172,41 +197,50 @@ export function CategoryManager({
         ) : (
           <ul className="divide-y rounded-xl border">
             {categories.map((c) => (
-              <li
-                key={c.id}
-                className="flex items-center justify-between gap-3 px-4 py-3"
-              >
-                <div className="min-w-0">
-                  <p className="truncate font-medium">
-                    {c.icon ? `${c.icon} ` : ""}
-                    {c.name}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {formatMoney(Number(c.current_balance), c.currency)} ·{" "}
-                    {c.currency}
-                  </p>
+              <li key={c.id} className="px-4 py-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="truncate font-medium">
+                      {c.icon ? `${c.icon} ` : ""}
+                      {c.name}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {formatMoney(Number(c.current_balance), c.currency)} ·{" "}
+                      {c.currency}
+                    </p>
+                  </div>
+                  <div className="flex shrink-0 gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setEditing(c);
+                        setEditName(c.name);
+                        setEditIcon(c.icon ?? "");
+                        setEditTarget(
+                          c.target_amount != null ? String(c.target_amount) : ""
+                        );
+                      }}
+                    >
+                      Ubah
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-destructive"
+                      onClick={() => setDeleting(c)}
+                    >
+                      Hapus
+                    </Button>
+                  </div>
                 </div>
-                <div className="flex shrink-0 gap-1">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      setEditing(c);
-                      setEditName(c.name);
-                      setEditIcon(c.icon ?? "");
-                    }}
-                  >
-                    Ubah
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-destructive"
-                    onClick={() => setDeleting(c)}
-                  >
-                    Hapus
-                  </Button>
-                </div>
+                {c.target_amount != null && Number(c.target_amount) > 0 && (
+                  <TargetProgress
+                    balance={Number(c.current_balance)}
+                    target={Number(c.target_amount)}
+                    currency={c.currency}
+                  />
+                )}
               </li>
             ))}
           </ul>
@@ -237,6 +271,19 @@ export function CategoryManager({
                 maxLength={4}
                 placeholder="💰"
               />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="edit-target">Target (opsional)</Label>
+              <Input
+                id="edit-target"
+                inputMode="decimal"
+                value={editTarget}
+                onChange={(e) => setEditTarget(e.target.value)}
+                placeholder={`mis. 5000000${editing ? ` (${editing.currency})` : ""}`}
+              />
+              <p className="text-xs text-muted-foreground">
+                Kosongkan untuk menghapus target.
+              </p>
             </div>
           </div>
           <DialogFooter>
