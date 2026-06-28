@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getUser } from "@/lib/supabase/server";
 import { getRatesMap } from "@/lib/rates";
 import { crossConvert } from "@/lib/currency";
 import { LevelCard } from "@/components/level-card";
@@ -6,11 +6,10 @@ import { CategoryBalances } from "@/components/category-balances";
 import { RecentEntries } from "@/components/recent-entries";
 
 export default async function DashboardPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getUser();
   if (!user) return null;
+
+  const supabase = await createClient();
 
   const [profileRes, levelsRes, categoriesRes, entriesRes, rates] =
     await Promise.all([

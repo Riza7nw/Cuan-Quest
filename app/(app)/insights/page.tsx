@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getUser } from "@/lib/supabase/server";
 import { getRatesMap } from "@/lib/rates";
 import { crossConvert, formatMoney } from "@/lib/currency";
 import { buildTotalSeries } from "@/lib/insights";
@@ -6,11 +6,10 @@ import { TotalOverTime } from "@/components/charts/total-over-time";
 import { Composition } from "@/components/charts/composition";
 
 export default async function InsightsPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getUser();
   if (!user) return null;
+
+  const supabase = await createClient();
 
   const [profileRes, categoriesRes, entriesRes, rates] = await Promise.all([
     supabase.from("profiles").select("display_currency").eq("id", user.id).single(),

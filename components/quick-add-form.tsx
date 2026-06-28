@@ -54,6 +54,13 @@ export function QuickAddForm({ pockets }: { pockets: Pocket[] }) {
       toast.error("Pilih kantong tujuan yang berbeda.");
       return;
     }
+
+    // Optimistic: clear the field immediately so the next entry can be typed
+    // without waiting for the server. Snapshot to roll back if the save fails.
+    const snapshot = amount;
+    setAmount("");
+    localStorage.setItem(LAST_KEY, categoryId);
+
     startTransition(async () => {
       const res = await createEntry({
         type,
@@ -63,14 +70,13 @@ export function QuickAddForm({ pockets }: { pockets: Pocket[] }) {
         occurred_at: showDate && occurredAt ? new Date(occurredAt) : undefined,
       });
       if (!res.ok) {
+        setAmount(snapshot);
         toast.error(res.error);
         return;
       }
-      localStorage.setItem(LAST_KEY, categoryId);
-      setAmount("");
-      router.refresh();
       if (res.leveledUp) setLevelUp({ level: res.newLevel, title: res.newTitle });
       else toast.success("Tersimpan! 💰");
+      router.refresh();
     });
   }
 

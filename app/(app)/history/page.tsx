@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getUser } from "@/lib/supabase/server";
 import { HistoryFilters } from "@/components/history-filters";
 import { formatMoney } from "@/lib/currency";
 import { formatDistanceToNow } from "date-fns";
@@ -21,11 +21,10 @@ export default async function HistoryPage({
   searchParams: Promise<{ type?: string; category?: string }>;
 }) {
   const sp = await searchParams;
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getUser();
   if (!user) return null;
+
+  const supabase = await createClient();
 
   const { data: categories } = await supabase
     .from("categories")
