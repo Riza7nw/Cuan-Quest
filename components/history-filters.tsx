@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Select,
@@ -8,6 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
 type Cat = { id: string; name: string };
@@ -23,31 +25,50 @@ export function HistoryFilters({
   categories,
   type,
   category,
+  q,
 }: {
   categories: Cat[];
   type: string;
   category: string;
+  q: string;
 }) {
   const router = useRouter();
+  const [search, setSearch] = useState(q);
 
-  function go(next: { type?: string; category?: string }) {
+  function go(next: { type?: string; category?: string; q?: string }) {
     const t = next.type ?? type;
     const c = next.category ?? category;
+    const qq = (next.q ?? search).trim();
     const params = new URLSearchParams();
     if (t) params.set("type", t);
     if (c) params.set("category", c);
+    if (qq) params.set("q", qq);
     const qs = params.toString();
     router.push(qs ? `/history?${qs}` : "/history");
   }
 
   return (
     <div className="space-y-3">
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          go({ q: search });
+        }}
+      >
+        <Input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Cari catatan…"
+          aria-label="Cari catatan entri"
+        />
+      </form>
       <div className="flex flex-wrap gap-2">
         {TYPES.map((t) => (
           <button
             key={t.v}
             type="button"
             onClick={() => go({ type: t.v })}
+            aria-pressed={type === t.v}
             className={cn(
               "rounded-full border px-3 py-1 text-sm transition",
               type === t.v

@@ -5,7 +5,13 @@ import { createClient } from "@/lib/supabase/server";
 import { entrySchema, type EntryInput } from "@/lib/validation/entries";
 
 export type CreateEntryResult =
-  | { ok: true; leveledUp: boolean; newLevel: number; newTitle: string | null }
+  | {
+      ok: true;
+      leveledUp: boolean;
+      newLevel: number;
+      newTitle: string | null;
+      newRecord: boolean;
+    }
   | { ok: false; error: string };
 
 // Records an entry. The DB triggers maintain pocket balances and recompute the
@@ -30,10 +36,11 @@ export async function createEntry(
 
   const { data: before } = await supabase
     .from("profiles")
-    .select("current_level")
+    .select("current_level,current_xp")
     .eq("id", user.id)
     .single();
   const beforeLevel = before?.current_level ?? 1;
+  const beforeXp = Number(before?.current_xp ?? 0);
 
   // RLS scopes the insert to this user; ownership of category/to_category is
   // enforced by the entries_insert policy. The trigger does the rest.
@@ -51,11 +58,15 @@ export async function createEntry(
 
   const { data: after } = await supabase
     .from("profiles")
-    .select("current_level")
+    .select("current_level,current_xp")
     .eq("id", user.id)
     .single();
   const afterLevel = after?.current_level ?? beforeLevel;
+  const afterXp = Number(after?.current_xp ?? beforeXp);
   const leveledUp = afterLevel > beforeLevel;
+  // peak_total (== current_xp) only rises; a strict increase means this entry
+  // set a new all-time high.
+  const newRecord = afterXp > beforeXp;
 
   let newTitle: string | null = null;
   if (leveledUp) {
@@ -72,5 +83,5 @@ export async function createEntry(
   revalidatePath("/insights"); // charts read the entries table
   revalidatePath("/categories"); // pocket balances change
 
-  return { ok: true, leveledUp, newLevel: afterLevel, newTitle };
+  return { ok: true, leveledUp, newLevel: afterLevel, newTitle, newRecord };
 }

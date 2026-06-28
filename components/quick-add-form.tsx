@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { createEntry } from "@/lib/actions/entries";
 import { LevelUpDialog } from "@/components/level-up-dialog";
+import { CoinBurst } from "@/components/coin-burst";
 import type { EntryType } from "@/lib/types";
 
 type Pocket = { id: string; name: string; currency: string; icon: string | null };
@@ -24,9 +25,13 @@ export function QuickAddForm({ pockets }: { pockets: Pocket[] }) {
   const [toCategoryId, setToCategoryId] = useState(pockets[1]?.id ?? "");
   const [showDate, setShowDate] = useState(false);
   const [occurredAt, setOccurredAt] = useState("");
+  const [showNote, setShowNote] = useState(false);
+  const [note, setNote] = useState("");
   const [levelUp, setLevelUp] = useState<{ level: number; title: string | null } | null>(
     null
   );
+  // Bumped on each successful deposit to replay the coin-burst animation.
+  const [burstKey, setBurstKey] = useState(0);
 
   // Remember the last-used pocket.
   useEffect(() => {
@@ -55,10 +60,13 @@ export function QuickAddForm({ pockets }: { pockets: Pocket[] }) {
       return;
     }
 
-    // Optimistic: clear the field immediately so the next entry can be typed
+    // Optimistic: clear the inputs immediately so the next entry can be typed
     // without waiting for the server. Snapshot to roll back if the save fails.
-    const snapshot = amount;
+    const amountSnapshot = amount;
+    const noteSnapshot = note;
+    const isDeposit = type === "deposit";
     setAmount("");
+    setNote("");
     localStorage.setItem(LAST_KEY, categoryId);
 
     startTransition(async () => {
@@ -67,15 +75,24 @@ export function QuickAddForm({ pockets }: { pockets: Pocket[] }) {
         category_id: categoryId,
         amount: amt,
         to_category_id: type === "transfer" ? toCategoryId : null,
+        note: noteSnapshot.trim() ? noteSnapshot.trim() : null,
         occurred_at: showDate && occurredAt ? new Date(occurredAt) : undefined,
       });
       if (!res.ok) {
-        setAmount(snapshot);
+        setAmount(amountSnapshot);
+        setNote(noteSnapshot);
         toast.error(res.error);
         return;
       }
-      if (res.leveledUp) setLevelUp({ level: res.newLevel, title: res.newTitle });
-      else toast.success("Tersimpan! 💰");
+      // Celebrate every deposit (the core XP-gaining action), not just level-ups.
+      if (isDeposit) setBurstKey((k) => k + 1);
+      if (res.leveledUp) {
+        setLevelUp({ level: res.newLevel, title: res.newTitle });
+      } else if (res.newRecord) {
+        toast.success("🏆 Rekor baru! Tabunganmu di titik tertinggi.");
+      } else {
+        toast.success("Tersimpan! 💰");
+      }
       router.refresh();
     });
   }
@@ -138,6 +155,26 @@ export function QuickAddForm({ pockets }: { pockets: Pocket[] }) {
         )}
       </div>
 
+      <div>
+        {!showNote ? (
+          <button
+            type="button"
+            onClick={() => setShowNote(true)}
+            className="text-xs text-muted-foreground underline underline-offset-2"
+          >
+            Tambah catatan
+          </button>
+        ) : (
+          <Input
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            maxLength={280}
+            placeholder="Catatan (opsional)"
+            autoFocus
+          />
+        )}
+      </div>
+
       <Button className="h-12 w-full text-base" disabled={pending} onClick={submit}>
         {pending
           ? "Menyimpan…"
@@ -154,6 +191,8 @@ export function QuickAddForm({ pockets }: { pockets: Pocket[] }) {
         level={levelUp?.level ?? 0}
         title={levelUp?.title ?? null}
       />
+
+      {burstKey > 0 && <CoinBurst key={burstKey} />}
     </div>
   );
 }

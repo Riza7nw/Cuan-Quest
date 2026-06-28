@@ -4,6 +4,7 @@ import { crossConvert, formatAsOf } from "@/lib/currency";
 import { LevelCard } from "@/components/level-card";
 import { CategoryBalances } from "@/components/category-balances";
 import { RecentEntries } from "@/components/recent-entries";
+import { Achievements } from "@/components/achievements";
 
 export default async function DashboardPage() {
   const user = await getUser();
@@ -11,7 +12,7 @@ export default async function DashboardPage() {
 
   const supabase = await createClient();
 
-  const [profileRes, levelsRes, categoriesRes, entriesRes, ratesResult] =
+  const [profileRes, levelsRes, categoriesRes, entriesRes, eventsRes, ratesResult] =
     await Promise.all([
       supabase.from("profiles").select("*").eq("id", user.id).single(),
       supabase.from("levels").select("*").order("level"),
@@ -26,6 +27,12 @@ export default async function DashboardPage() {
         .eq("user_id", user.id)
         .order("occurred_at", { ascending: false })
         .limit(8),
+      supabase
+        .from("level_up_events")
+        .select("new_level,created_at")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(12),
       getRatesMap(),
     ]);
 
@@ -33,6 +40,7 @@ export default async function DashboardPage() {
   const levels = levelsRes.data ?? [];
   const categories = categoriesRes.data ?? [];
   const entries = entriesRes.data ?? [];
+  const events = eventsRes.data ?? [];
   const { rates, asOf, ok: ratesOk } = ratesResult;
   if (!profile) return null;
 
@@ -73,6 +81,7 @@ export default async function DashboardPage() {
         xp={Number(profile.current_xp)}
         baseCurrency={profile.base_currency}
         levels={levels}
+        rates={rates}
       />
       {needsConversion &&
         (ratesOk ? (
@@ -88,6 +97,7 @@ export default async function DashboardPage() {
         ))}
       <CategoryBalances categories={categories} />
       <RecentEntries rows={recent} />
+      <Achievements events={events} levels={levels} />
     </div>
   );
 }

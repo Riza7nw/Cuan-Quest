@@ -18,7 +18,7 @@ const SIGN: Record<string, string> = {
 export default async function HistoryPage({
   searchParams,
 }: {
-  searchParams: Promise<{ type?: string; category?: string }>;
+  searchParams: Promise<{ type?: string; category?: string; q?: string }>;
 }) {
   const sp = await searchParams;
   const user = await getUser();
@@ -43,6 +43,7 @@ export default async function HistoryPage({
     query = query.eq("type", sp.type);
   }
   if (sp.category) query = query.eq("category_id", sp.category);
+  if (sp.q) query = query.ilike("note", `%${sp.q}%`);
   const { data: entries } = await query;
 
   return (
@@ -52,6 +53,7 @@ export default async function HistoryPage({
         categories={(categories ?? []).map((c) => ({ id: c.id, name: c.name }))}
         type={sp.type ?? ""}
         category={sp.category ?? ""}
+        q={sp.q ?? ""}
       />
 
       {!entries || entries.length === 0 ? (

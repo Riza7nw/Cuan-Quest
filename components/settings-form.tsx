@@ -14,6 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { updateDisplayCurrency } from "@/lib/actions/profile";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 type CurrencyOption = { code: string; name: string };
 
@@ -81,6 +82,10 @@ export function SettingsForm({
         <Button onClick={save} disabled={pending} className="w-full">
           Simpan
         </Button>
+
+        <div className="border-t pt-4">
+          <ThemeToggle />
+        </div>
       </CardContent>
     </Card>
   );
